@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Здоровье — ежедневный трекер</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface2: #f2f2ef;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.2);
+    --text: #1a1a1a;
+    --text2: #666;
+    --text3: #999;
+    --green: #1D9E75;
+    --green-light: #e1f5ee;
+    --green-mid: #9FE1CB;
+    --red: #A32D2D;
+    --red-light: #fcebeb;
+    --blue: #185FA5;
+    --blue-light: #e6f1fb;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --surface2: #2e2e2e;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --text: #f0f0f0;
+      --text2: #aaa;
+      --text3: #666;
+      --green-light: #04342C;
+      --green-mid: #085041;
+      --red-light: #501313;
+      --blue-light: #042C53;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--text3); margin-bottom: 1.5rem; }
+
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; color: var(--text2); border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+  .date-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+  .date-label { flex: 1; text-align: center; font-size: 16px; font-weight: 500; }
+  .nav-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 14px; cursor: pointer; color: var(--text2); font-size: 16px; font-family: inherit; }
+  .nav-btn:hover { border-color: var(--border2); }
+  .today-btn { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; color: var(--green); font-size: 13px; font-family: inherit; white-space: nowrap; }
+
+  .section { margin-bottom: 1.25rem; }
+  .section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem; padding: 0 2px; display: flex; align-items: center; gap: 6px; }
+  .section-title i { font-size: 14px; }
+
+  .item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; cursor: pointer; transition: border-color .15s, background .15s; user-select: none; }
+  .item:hover { border-color: var(--border2); }
+  .item.checked { background: var(--green-light); border-color: var(--green-mid); }
+  .check-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all .15s; }
+  .item.checked .check-box { background: var(--green); border-color: var(--green); }
+  .item.checked .check-box i { display: block !important; }
+  .item-text { flex: 1; }
+  .item-label { font-size: 14px; color: var(--text); line-height: 1.4; }
+  .item.checked .item-label { color: var(--text2); }
+  .item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+  .note-wrap { margin-top: 8px; }
+  .note-input { width: 100%; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); font-family: inherit; }
+  .note-input:focus { outline: none; border-color: var(--green); }
+
+  .mood-row { display: flex; gap: 6px; margin-bottom: .75rem; }
+  .mood-btn { flex: 1; padding: 9px 4px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--text2); text-align: center; font-family: inherit; transition: all .15s; }
+  .mood-btn:hover { border-color: var(--border2); }
+  .mood-btn.sel { border-color: var(--green); color: var(--green); background: var(--green-light); }
+
+  .save-btn { width: 100%; padding: 13px; border: none; border-radius: var(--radius-lg); background: var(--green); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: .5rem; }
+  .save-btn:hover { opacity: .9; }
+  .save-btn:active { transform: scale(.98); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .stat-val { font-size: 26px; font-weight: 600; color: var(--text); }
+  .stat-lbl { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  .streak-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: .75rem; }
+  .dot { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  .dot span { font-size: 10px; color: var(--text3); }
+  .dot.full { background: var(--green); }
+  .dot.full span { color: #fff; }
+  .dot.part { background: var(--green-mid); }
+  .dot.part span { color: #085041; }
+  @media (prefers-color-scheme: dark) { .dot.part span { color: #e1f5ee; } }
+
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text3); margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+
+  .export-btn { display: flex; align-items: center; gap: 8px; padding: 11px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 14px; color: var(--text2); font-family: inherit; margin-bottom: 1rem; }
+  .export-btn:hover { border-color: var(--border2); color: var(--text); }
+  .export-btn i { font-size: 18px; color: var(--green); }
+
+  .history-item { padding: 13px 15px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; }
+  .history-item:hover { border-color: var(--border2); }
+  .history-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .history-date { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .history-score { font-size: 15px; font-weight: 600; color: var(--green); }
+  .bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; margin-bottom: 6px; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--green); }
+  .history-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--green-light); color: var(--green); }
+  .tag.bad { background: var(--red-light); color: var(--red); }
+  .history-note { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  .no-data { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
+  .no-data i { font-size: 40px; margin-bottom: .75rem; display: block; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: var(--radius-lg); font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  @media (prefers-color-scheme: dark) { .toast { background: #f0f0f0; color: #1a1a1a; } }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .pressure-trend { margin-bottom: 1.5rem; }
+  .trend-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .75rem; }
+  .pressure-list { display: flex; flex-direction: column; gap: 4px; }
+  .pressure-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .pressure-date-lbl { color: var(--text3); width: 90px; flex-shrink: 0; }
+  .pressure-val { font-weight: 500; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💪 Трекер здоровья</h1>
+  <p class="subtitle">Ежедневный чеклист · данные хранятся в браузере</p>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('today')">Сегодня</button>
+    <button class="tab" onclick="switchTab('stats')">Статистика</button>
+    <button class="tab" onclick="switchTab('history')">История</button>
+  </div>
+
+  <!-- TODAY -->
+  <div id="view-today" class="view active">
+    <div class="date-nav">
+      <button class="nav-btn" onclick="shiftDay(-1)">←</button>
+      <div class="date-label" id="date-label"></div>
+      <button class="nav-btn" onclick="shiftDay(1)">→</button>
+      <button class="today-btn" onclick="goToday()">сегодня</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ti ti-run"></i> Движение</div>
+      <div class="item" onclick="toggle('workout')" id="i-workout">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Тренировка / гимнастика</div>
+          <div class="item-sub">Минимум 5 минут — уже победа. Не разрывай цепочку.</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle('walk')" id="i-walk">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Прогулка / свежий воздух</div>
+          <div class="item-sub">20–30 мин на улице, желательно утром — регулирует дофамин</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ti ti-heart-rate-monitor"></i> Тело и давление</div>
+      <div class="item" onclick="toggle('pressure')" id="i-pressure">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Измерил давление</div>
+          <div class="item-sub">Записывай показатели — увидишь тренд через 2 недели</div>
+          <div class="note-wrap" onclick="event.stopPropagation()">
+            <input class="note-input" id="n-pressure" placeholder="например: 135/88" oninput="saveNote('pressure',this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle('water')" id="i-water">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Достаточно воды</div>
+          <div class="item-sub">1.5–2 литра в день</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle('food')" id="i-food">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Нормальная еда (белок + овощи)</div>
+          <div class="item-sub">Мясо, рыба, яйца, творог — строительный материал для дофамина</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ti ti-brain"></i> Психика и восстановление</div>
+      <div class="item" onclick="toggle('breath')" id="i-breath">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Дыхание 4-7-8</div>
+          <div class="item-sub">4 цикла вечером · Вдох 4с → задержка 7с → выдох 8с · снижает давление</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle('sleep')" id="i-sleep">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Сон 7+ часов</div>
+          <div class="item-sub">Главный инструмент восстановления дофаминовой системы</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ti ti-glass-off"></i> Алкоголь</div>
+      <div class="item" onclick="toggle('noalc')" id="i-noalc">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">День без алкоголя ✊</div>
+          <div class="item-sub">Особенно важно в день тренировки. Каждый такой день — ремонт дофаминовой системы.</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle('alclim')" id="i-alclim">
+        <div class="check-box"><i class="ti ti-check" style="font-size:14px;color:#fff;display:none"></i></div>
+        <div class="item-text">
+          <div class="item-label">Если пил — не более 2 единиц</div>
+          <div class="item-sub">Промежуточная цель на первые 2 месяца</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ti ti-mood-happy"></i> Самочувствие</div>
+      <div class="mood-row">
+        <button class="mood-btn" onclick="setMood(1)">😔<br>плохо</button>
+        <button class="mood-btn" onclick="setMood(2)">😐<br>нейтрально</button>
+        <button class="mood-btn" onclick="setMood(3)">🙂<br>норм</button>
+        <button class="mood-btn" onclick="setMood(4)">😊<br>хорошо</button>
+      </div>
+      <input class="note-input" id="n-day" placeholder="Заметка о дне (необязательно)..." oninput="saveNote('day',this.value)" style="width:100%">
+    </div>
+
+    <button class="save-btn" onclick="saveDay()">Сохранить день</button>
+  </div>
+
+  <!-- STATS -->
+  <div id="view-stats" class="view">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="section-title" style="margin-bottom:.75rem;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="font-size:14px"></i> Последние 28 дней</div>
+    <div class="streak-bar" id="streak-bar"></div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:var(--green)"></span>80%+ выполнено</span>
+      <span><span class="legend-dot" style="background:var(--green-mid)"></span>частично</span>
+      <span><span class="legend-dot" style="background:var(--surface2)"></span>нет данных</span>
+    </div>
+    <div class="pressure-trend" id="pressure-trend"></div>
+    <button class="export-btn" onclick="exportCSV()">
+      <i class="ti ti-download"></i> Экспорт в CSV (для Numbers / Excel)
+    </button>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="view-history" class="view">
+    <button class="export-btn" onclick="exportCSV()">
+      <i class="ti ti-download"></i> Экспорт в CSV (для Numbers / Excel)
+    </button>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_PREFIX = 'hc2:';
+const KEYS = ['workout','walk','pressure','water','food','breath','sleep','noalc','alclim'];
+const LABELS = {
+  workout: 'Тренировка',
+  walk: 'Прогулка',
+  pressure: 'Давление измерил',
+  water: 'Вода',
+  food: 'Нормальная еда',
+  breath: 'Дыхание 4-7-8',
+  sleep: 'Сон 7+ ч',
+  noalc: 'Без алкоголя',
+  alclim: 'Алк. ≤ 2 ед.'
+};
+const MOOD_LABELS = ['','😔 плохо','😐 нейтрально','🙂 норм','😊 хорошо'];
+
+let currentDate = todayStr();
+let state = {};
+let mood = 0;
+let notes = {};
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function storKey(date) { return STORAGE_PREFIX + date; }
+
+function loadDay(date) {
+  state = {}; mood = 0; notes = {};
+  try {
+    const raw = localStorage.getItem(storKey(date));
+    if (raw) {
+      const d = JSON.parse(raw);
+      state = d.state || {};
+      mood = d.mood || 0;
+      notes = d.notes || {};
+    }
+  } catch(e) {}
+  renderDay();
+}
+
+function saveDay() {
+  const data = { state, mood, notes, date: currentDate, savedAt: new Date().toISOString() };
+  try {
+    localStorage.setItem(storKey(currentDate), JSON.stringify(data));
+    showToast('Сохранено ✓');
+  } catch(e) { showToast('Ошибка сохранения'); }
+}
+
+function toggle(key) {
+  state[key] = !state[key];
+  renderDay();
+}
+
+function setMood(v) {
+  mood = (mood === v) ? 0 : v;
+  renderDay();
+}
+
+function saveNote(key, val) {
+  notes[key] = val;
+}
+
+function renderDay() {
+  KEYS.forEach(k => {
+    const el = document.getElementById('i-' + k);
+    if (!el) return;
+    const box = el.querySelector('.check-box');
+    const ico = box.querySelector('i');
+    if (state[k]) {
+      el.classList.add('checked');
+      box.style.background = 'var(--green)';
+      box.style.borderColor = 'var(--green)';
+      ico.style.display = 'block';
+    } else {
+      el.classList.remove('checked');
+      box.style.background = '';
+      box.style.borderColor = '';
+      ico.style.display = 'none';
+    }
+  });
+  document.querySelectorAll('.mood-btn').forEach((b, i) => {
+    b.classList.toggle('sel', mood === i + 1);
+  });
+  const np = document.getElementById('n-pressure');
+  if (np) np.value = notes.pressure || '';
+  const nd = document.getElementById('n-day');
+  if (nd) nd.value = notes.day || '';
+}
+
+function dateLabel(str) {
+  const d = new Date(str + 'T12:00:00');
+  const today = todayStr();
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const yestStr = yest.toISOString().slice(0,10);
+  const opts = { day: 'numeric', month: 'long', weekday: 'long' };
+  if (str === today) return 'Сегодня, ' + d.toLocaleDateString('ru', { day: 'numeric', month: 'long' });
+  if (str === yestStr) return 'Вчера, ' + d.toLocaleDateString('ru', { day: 'numeric', month: 'long' });
+  return d.toLocaleDateString('ru', opts);
+}
+
+function updateDateLabel() {
+  document.getElementById('date-label').textContent = dateLabel(currentDate);
+}
+
+function shiftDay(n) {
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  const next = d.toISOString().slice(0,10);
+  if (next > todayStr()) return;
+  currentDate = next;
+  updateDateLabel();
+  loadDay(currentDate);
+}
+
+function goToday() {
+  currentDate = todayStr();
+  updateDateLabel();
+  loadDay(currentDate);
+}
+
+function getAllDays() {
+  const days = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key.startsWith(STORAGE_PREFIX)) continue;
+    try {
+      const d = JSON.parse(localStorage.getItem(key));
+      if (d && d.date) days.push(d);
+    } catch(e) {}
+  }
+  return days.sort((a,b) => a.date > b.date ? -1 : 1);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['today','stats','history'][i] === tab);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  if (tab === 'stats') loadStats();
+  if (tab === 'history') loadHistory();
+}
+
+function score(d) {
+  return KEYS.filter(k => d.state && d.state[k]).length;
+}
+
+function loadStats() {
+  const days = getAllDays();
+  const grid = document.getElementById('stats-grid');
+  const bar = document.getElementById('streak-bar');
+  const pt = document.getElementById('pressure-trend');
+
+  if (!days.length) {
+    grid.innerHTML = '<div class="no-data"><i class="ti ti-chart-bar"></i>Пока нет данных.<br>Заполни первый день!</div>';
+    bar.innerHTML = ''; pt.innerHTML = '';
+    return;
+  }
+
+  const total = days.length;
+  const workouts = days.filter(d => d.state && d.state.workout).length;
+  const noalc = days.filter(d => d.state && d.state.noalc).length;
+  const sleepDays = days.filter(d => d.state && d.state.sleep).length;
+  const avgScore = Math.round(days.reduce((s,d) => s + score(d)/KEYS.length*100, 0) / total);
+
+  // streak
+  let streak = 0;
+  const sorted = [...days].sort((a,b) => a.date > b.date ? -1 : 1);
+  let prev = todayStr();
+  for (const d of sorted) {
+    if (d.date === prev || d.date === shiftStr(prev,-1)) {
+      if (score(d) > 0) { streak++; prev = d.date; }
+      else break;
+    } else break;
+  }
+
+  grid.innerHTML = `
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Дней в трекере</div></div>
+    <div class="stat-card"><div class="stat-val">${streak}</div><div class="stat-lbl">Текущая серия</div></div>
+    <div class="stat-card"><div class="stat-val">${workouts}</div><div class="stat-lbl">Тренировок</div></div>
+    <div class="stat-card"><div class="stat-val">${noalc}</div><div class="stat-lbl">Дней без алк.</div></div>
+    <div class="stat-card"><div class="stat-val">${sleepDays}</div><div class="stat-lbl">Ночей 7+ ч.</div></div>
+    <div class="stat-card"><div class="stat-val">${avgScore}%</div><div class="stat-lbl">Средний балл</div></div>
+  `;
+
+  // 28-day dots
+  const dots = [];
+  for (let i = 27; i >= 0; i--) {
+    const date = shiftStr(todayStr(), -i);
+    const entry = days.find(d => d.date === date);
+    const d = new Date(date + 'T12:00:00');
+    const lbl = d.getDate();
+    if (!entry) { dots.push(`<div class="dot"><span>${lbl}</span></div>`); continue; }
+    const pct = score(entry) / KEYS.length;
+    const cls = pct >= 0.8 ? 'full' : pct > 0 ? 'part' : '';
+    dots.push(`<div class="dot ${cls}"><span>${lbl}</span></div>`);
+  }
+  bar.innerHTML = dots.join('');
+
+  // pressure trend
+  const withPressure = days.filter(d => d.notes && d.notes.pressure).slice(0,10);
+  if (withPressure.length) {
+    const rows = withPressure.map(d => {
+      const dt = new Date(d.date+'T12:00:00');
+      const lbl = dt.toLocaleDateString('ru',{day:'numeric',month:'short'});
+      return `<div class="pressure-row"><span class="pressure-date-lbl">${lbl}</span><span class="pressure-val">${d.notes.pressure}</span></div>`;
+    }).join('');
+    pt.innerHTML = `<div class="trend-title">📊 Давление (последние записи)</div><div class="pressure-list">${rows}</div>`;
+  } else {
+    pt.innerHTML = '';
+  }
+}
+
+function shiftStr(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+
+function loadHistory() {
+  const days = getAllDays();
+  const list = document.getElementById('history-list');
+  if (!days.length) {
+    list.innerHTML = '<div class="no-data"><i class="ti ti-history"></i>История пустая.<br>Начни заполнять!</div>';
+    return;
+  }
+  list.innerHTML = days.map(d => {
+    const s = score(d);
+    const pct = Math.round(s / KEYS.length * 100);
+    const dt = new Date(d.date+'T12:00:00');
+    const dl = dt.toLocaleDateString('ru',{weekday:'short',day:'numeric',month:'short'});
+    const moodStr = d.mood ? MOOD_LABELS[d.mood] : '';
+    const done = KEYS.filter(k => d.state && d.state[k]);
+    const tags = done.map(k => `<span class="tag">${LABELS[k]}</span>`).join('');
+    const pressureStr = d.notes && d.notes.pressure ? `<div class="history-note">📊 ${d.notes.pressure}</div>` : '';
+    const noteStr = d.notes && d.notes.day ? `<div class="history-note">📝 ${d.notes.day}</div>` : '';
+    return `<div class="history-item" onclick="gotoDate('${d.date}')">
+      <div class="history-top">
+        <span class="history-date">${dl} ${moodStr}</span>
+        <span class="history-score">${pct}%</span>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="history-tags">${tags}</div>
+      ${pressureStr}${noteStr}
+    </div>`;
+  }).join('');
+}
+
+function gotoDate(date) {
+  currentDate = date;
+  updateDateLabel();
+  switchTab('today');
+  loadDay(date);
+}
+
+function exportCSV() {
+  const days = getAllDays().sort((a,b) => a.date < b.date ? -1 : 1);
+  if (!days.length) { showToast('Нет данных для экспорта'); return; }
+
+  const headers = ['Дата', ...KEYS.map(k => LABELS[k]), 'Самочувствие', 'Давление', 'Заметка', 'Балл %'];
+  const rows = days.map(d => {
+    const cols = [
+      d.date,
+      ...KEYS.map(k => (d.state && d.state[k]) ? '1' : '0'),
+      d.mood ? MOOD_LABELS[d.mood].replace(/[^а-яёА-ЯЁ ]/g,'').trim() : '',
+      (d.notes && d.notes.pressure) ? d.notes.pressure : '',
+      (d.notes && d.notes.day) ? '"' + d.notes.day.replace(/"/g,'""') + '"' : '',
+      Math.round(score(d)/KEYS.length*100) + '%'
+    ];
+    return cols.join(';');
+  });
+
+  const bom = '\uFEFF';
+  const csv = bom + [headers.join(';'), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'здоровье_' + todayStr() + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV скачан — открой в Numbers!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+updateDateLabel();
+loadDay(currentDate);
+</script>
+</body>
+</html>
